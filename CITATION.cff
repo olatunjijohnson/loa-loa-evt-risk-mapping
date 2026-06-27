@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the associated paper."
+title: "Loa loa high-intensity risk mapping with extreme-value theory"
+abstract: >-
+  Bayesian joint geostatistical and extreme-value model for predicting where
+  high-intensity Loa loa microfilarial loads (>20,000 mf/mL) are appreciably common,
+  to support the safety of ivermectin mass drug administration in loiasis co-endemic
+  areas. Applied to south-eastern Nigeria.
+authors:
+  - family-names: Johnson
+    given-names: Olatunji
+license: MIT
+keywords:
+  - Loa loa
+  - geostatistics
+  - extreme-value theory
+  - generalised Pareto distribution
+  - ivermectin
+  - mass drug administration
+  - neglected tropical diseases
+preferred-citation:
+  type: article
+  title: >-
+    Predicting where few people carry dangerously high Loa loa microfilarial loads:
+    a Bayesian joint geostatistical and extreme-value analysis to support safe
+    ivermectin mass treatment in south-eastern Nigeria
+  authors:
+    - family-names: Johnson
+      given-names: Olatunji
+  year: 2026
+  notes: "DOI to be added on publication."

@@ -1,0 +1,34 @@
+# Data and results are never committed (see README "Data availability")
+data/
+results/
+*.rds
+*.csv
+*.xlsx
+*.xls
+
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Python / Stan / venv
+.venv/
+__pycache__/
+*.pyc
+*.stan
+*.rds.tmp
+
+# LaTeX / build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.pdf
+
+# OS
+.DS_Store
+Thumbs.db
