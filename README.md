@@ -46,9 +46,16 @@ code/
                              tail (mean-residual-life) diagnostics
   NGA_run_highrisk.R         Main run: fit, krige, per-LGA q_g, tail-robustness, LOO
   NGA_report_figures.R       All maps and figures
+  NGA_manuscript_figures_rev.R  Revised manuscript figures: two-panel EDA figure and
+                             the tail-robustness figure in main-text (lognormal vs
+                             lognormal+GPD) and supplementary (all four models) forms
   NGA_multithreshold.R       Burden / P(q_g<0.1%) at 10k, 15k, 20k mf/mL
   NGA_multithreshold_report.R  Multi-threshold table + faceted map
   NGA_binomial_benchmark.R   Model-free per-LGA "rule of three" upper limits
+  NGA_shape_stability.R      GPD threshold-stability scan over u = 500..1500 mf/mL
+  NGA_prior_sensitivity_xi.R Sensitivity of the tail shape xi to its prior
+  NGA_village_cv.R           Random village-fold CV (local interpolation skill),
+                             the counterpart to the harsh spatial block CV
   NGA_spatial_tail_prototype.R  Two-stage spatial-GPD prototype (σ_u(x)=exp(α+β f_c))
   NGA_joint_tail.R           Joint hurdle+spatial-GPD fit (β-free vs β=0) + per-LGA q_g
   NGA_joint_tail_compare.R   Spatial-tail vs pooled-tail per-LGA comparison
@@ -96,10 +103,26 @@ Rscript code/NGA_multithreshold.R && Rscript code/NGA_multithreshold_report.R
 Rscript code/NGA_binomial_benchmark.R
 Rscript code/NGA_report_figures.R
 
-# 3. spatially-structured extreme-value tail (Peter Diggle's suggestion)
+# 3. tail-model adequacy and out-of-sample checks (supplementary material)
+Rscript code/NGA_shape_stability.R          # threshold stability, u = 500..1500
+Rscript code/NGA_prior_sensitivity_xi.R     # prior sensitivity of the shape xi
+Rscript code/NGA_village_cv.R               # random village-fold CV
+
+# 4. spatially-structured extreme-value tail (Peter Diggle's suggestion)
 Rscript code/NGA_spatial_tail_prototype.R   # fast two-stage prototype
 Rscript code/NGA_joint_tail.R               # full joint fit (set JOINT_SMOKE=1 to test)
 Rscript code/NGA_joint_tail_compare.R       # vs the pooled-tail headline
+
+# 5. revised manuscript figures (fast; no refit needed)
+Rscript code/NGA_manuscript_figures_rev.R
+```
+
+Scripts that produce manuscript figures write to `results/highrisk_20000/figures/`
+(or `.../validation/`). Set `LOA_MS_FIGDIR` to mirror them into a manuscript
+directory as well:
+
+```bash
+LOA_MS_FIGDIR=/path/to/manuscript/figures Rscript code/NGA_manuscript_figures_rev.R
 ```
 
 Full MCMC settings (4 chains × 2,000 iterations, adapt_delta 0.95) are in `CFG` at
