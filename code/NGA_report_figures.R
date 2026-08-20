@@ -17,7 +17,7 @@ theme_set(theme_minimal(base_size = 11) +
 BR <- c("#2166AC","#4393C3","#92C5DE","#D1E5F0","#FDDBC7","#F4A582","#D6604D","#B2182B")
 fill_br <- function(name, ..., na.value = "grey88") scale_fill_gradientn(colours = BR, name = name, na.value = na.value, ...)
 
-OUT <- "results/highrisk_20000"; FIG <- file.path(OUT, "figures"); dir.create(FIG, showWarnings = FALSE)
+OUT <- CFG$paths$out_dir; FIG <- file.path(OUT, "figures"); dir.create(FIG, showWarnings = FALSE)
 log_msg <- function(...) cat(format(Sys.time()), "|", ..., "\n")
 
 # -----------------------------------------------------------------------------
@@ -113,15 +113,28 @@ lab_xy <- labs(x = NULL, y = NULL)
 # =============================================================================
 # FIGURE: study area
 # =============================================================================
-log_msg("Fig: study area...")
-f_area <- ggplot() +
-  geom_sf(data = nation, fill = "grey95", colour = "grey75", linewidth = 0.2) +
-  geom_sf(data = state_poly, aes(fill = statename), colour = "grey20", linewidth = 0.4) +
-  geom_point(data = vill, aes(long, lat), size = 0.5, colour = "black", alpha = 0.6) +
+# Main panel zoomed to the five states (the study area is a small part of the
+# country, so a whole-Nigeria view loses all detail), with a locator inset showing
+# where that block sits nationally.
+log_msg("Fig: study area (zoomed, with national locator inset)...")
+f_main <- ggplot() +
+  geom_sf(data = nation, fill = "grey96", colour = "grey80", linewidth = 0.15) +
+  geom_sf(data = state_poly, aes(fill = statename), colour = "grey25", linewidth = 0.45) +
+  geom_point(data = vill, aes(long, lat), size = 1.1, colour = "black", alpha = 0.75) +
   scale_fill_brewer(palette = "Set2", name = "Study state") +
-  lab_xy + labs(title = "Study area: five states of south-eastern Nigeria",
-                subtitle = "Survey villages (points) within Abia, Anambra, Delta, Ebonyi and Imo") +
+  map_theme() + lab_xy +
+  labs(title = "Study area: five states of south-eastern Nigeria",
+       subtitle = "Survey villages (points) within Abia, Anambra, Delta, Ebonyi and Imo") +
   theme(legend.position = "right")
+f_locator <- ggplot() +
+  geom_sf(data = nation, fill = "grey93", colour = "grey70", linewidth = 0.12) +
+  geom_sf(data = state_poly, fill = "#D6604D", colour = "grey25", linewidth = 0.15) +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "white", colour = "grey55", linewidth = 0.4),
+        plot.margin = margin(2, 2, 2, 2))
+f_area <- f_main +
+  inset_element(f_locator, left = 0.76, bottom = 0.02, right = 1.00, top = 0.30,
+                align_to = "panel")
 ggsave(file.path(FIG, "fig0_studyarea.png"), f_area, width = 8, height = 6.5, dpi = 200)
 
 # =============================================================================

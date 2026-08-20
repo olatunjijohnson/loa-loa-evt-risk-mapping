@@ -56,6 +56,14 @@ code/
   NGA_prior_sensitivity_xi.R Sensitivity of the tail shape xi to its prior
   NGA_village_cv.R           Random village-fold CV (local interpolation skill),
                              the counterpart to the harsh spatial block CV
+  NGA_lga_fix_build.R        Rebuild the survey file keyed on the SURVEY's own village
+                             identity (VillID), correcting villages whose records carry
+                             GPS points in two different LGAs
+  NGA_lga_fix_run.R          Headline model fitted twice through identical code, on the
+                             original and the corrected input, with a per-LGA comparison
+  NGA_extract_numbers.R      Pull every number the manuscript quotes from a results dir
+  run_lgafix_full.sh         Driver: full pipeline on the corrected input
+  run_lgafix_validation.sh   Driver: validation + village CV on the corrected input
   NGA_spatial_tail_prototype.R  Two-stage spatial-GPD prototype (σ_u(x)=exp(α+β f_c))
   NGA_joint_tail.R           Joint hurdle+spatial-GPD fit (β-free vs β=0) + per-LGA q_g
   NGA_joint_tail_compare.R   Spatial-tail vs pooled-tail per-LGA comparison
@@ -127,6 +135,38 @@ LOA_MS_FIGDIR=/path/to/manuscript/figures Rscript code/NGA_manuscript_figures_re
 
 Full MCMC settings (4 chains × 2,000 iterations, adapt_delta 0.95) are in `CFG` at
 the top of `NGA_common.R`; reduce them (or use `run_lite.R`) for a quick check.
+
+## Input and output overrides
+
+`CFG$paths$data` and `CFG$paths$out_dir` default to
+`data/NGA_cleaned_corrected.csv` and `results/highrisk_20000`, and can be pointed
+elsewhere with the `LOA_DATA` and `LOA_OUT` environment variables. This allows a
+parallel run on a corrected input without disturbing an existing results directory:
+
+```bash
+LOA_DATA=data/NGA_lgafix.csv LOA_OUT=results/highrisk_20000_fixed \
+  Rscript code/NGA_run_highrisk.R
+```
+
+## Village identity and the LGA correction
+
+Villages were originally keyed on the administrative polygon each GPS point falls
+in (`NAME_1`, `NAME_2`, `Vill`). Several villages carry points in two different
+LGAs — four of them tens of km apart, which are data-entry errors — so those
+villages were split in two and the counts (116 villages, 25 LGAs) departed from the
+survey's own labelling (110 communities, 19 LGAs). `NGA_lga_fix_build.R` keys on
+`VillID` and keeps, for each village, the recorded points whose LGA matches the
+survey's own label. `NGA_lga_fix_run.R` fits the headline model on both inputs and
+compares the per-LGA results; the safety conclusion is unchanged.
+
+## Requirements note
+
+`build_covariates()` places natural-spline interior knots at quantiles of the
+distinct covariate values, dropping any that coincide with a boundary knot;
+`water_occurrence` is zero at most villages and a naive quantile rule puts several
+interior knots on the left boundary, which `splines::ns()` rejects. Note also that
+patchwork must be ≥ 1.3.0 to work with ggplot2 4.x — earlier versions fail when
+collecting guides across panels.
 
 ## License
 

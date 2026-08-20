@@ -42,11 +42,13 @@ CFG <- list(
   spline_df     = 4,         # natural-spline df per continuous covariate
   hs_p0         = 6,         # regularized horseshoe: prior guess at # relevant terms
   paths = list(
-    data      = "data/NGA_cleaned_corrected.csv",          # Edo->Delta, Benue->Ebonyi (see NGA_fix_data.R)
+    # Defaults unchanged; LOA_DATA / LOA_OUT allow a parallel run on a corrected
+    # input without disturbing results/highrisk_20000 (see run_lgafix_full.sh).
+    data      = Sys.getenv("LOA_DATA", "data/NGA_cleaned_corrected.csv"),  # Edo->Delta, Benue->Ebonyi (see NGA_fix_data.R)
     grid      = "data/prediction_NGA_states.csv",
     cov_vill  = "data/covariates/covariates_villages_corrected.csv",  # +2 villages, nearest-cell covariates
     cov_grid  = "data/covariates/covariates_grid.csv",
-    out_dir   = "results/highrisk_20000"
+    out_dir   = Sys.getenv("LOA_OUT", "results/highrisk_20000")
   )
 )
 
@@ -150,10 +152,23 @@ build_covariates <- function(villages, grid, cfg = CFG) {
   for (c in covs) {
     xv <- (vjoin[[c]] - mu[c]) / sg[c]
     xg <- (gridc[[c]] - mu[c]) / sg[c]
-    b  <- splines::ns(xv, df = cfg$spline_df)
-    Bv[[c]] <- b
-    Bg[[c]] <- predict(b, xg)
-    meta <- c(meta, rep(c, ncol(b)))
+    # Interior knots at quantiles of the DISTINCT values, dropping any that fall on
+    # a boundary knot. water_occurrence is zero at most villages, so quantiles of
+    # all values put several interior knots on the left boundary, which ns() rejects.
+    bk <- range(xv)
+    k  <- unique(as.numeric(quantile(unique(xv),
+            seq(0, 1, length.out = cfg$spline_df + 1)[-c(1, cfg$spline_df + 1)])))
+    k  <- k[k > bk[1] & k < bk[2]]
+    if (length(k)) {
+      b <- splines::ns(xv, knots = k, Boundary.knots = bk)
+      Bv[[c]] <- b
+      Bg[[c]] <- predict(b, xg)
+    } else {                                   # degenerate: fall back to linear
+      Bv[[c]] <- matrix(xv, ncol = 1)
+      Bg[[c]] <- matrix(xg, ncol = 1)
+      message("  build_covariates: linear fallback for ", c)
+    }
+    meta <- c(meta, rep(c, ncol(Bv[[c]])))
   }
   Xv <- do.call(cbind, Bv); Xg <- do.call(cbind, Bg)
   colnames(Xv) <- colnames(Xg) <- paste0(meta, ".", ave(meta, meta, FUN = seq_along))
