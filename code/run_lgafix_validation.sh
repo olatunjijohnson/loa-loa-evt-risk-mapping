@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Validation + village-level CV on the LGA-corrected data.
-set -uo pipefail
+set -euo pipefail
 cd "$(dirname "$0")/.."   # repository root
 export LOA_DATA=data/NGA_lgafix.csv
 export LOA_OUT=results/highrisk_20000_fixed

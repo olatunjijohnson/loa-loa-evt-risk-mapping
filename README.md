@@ -1,173 +1,165 @@
-# Loa loa high-intensity risk mapping with extreme-value theory
+# Loa loa safety classification in Nigeria
 
-Code for a Bayesian **joint geostatistical and extreme-value** model that predicts
-where dangerously high *Loa loa* microfilarial loads (>20,000 mf/mL) are appreciably
-common, to support the safety of ivermectin mass drug administration (MDA) for
-onchocerciasis and lymphatic filariasis in loiasis co-endemic areas. The analysis is
-applied to a survey of south-eastern Nigeria (Abia, Anambra, Delta, Ebonyi, Imo).
+Analysis code accompanying **A joint geostatistical extreme-value model to enable
+safe ivermectin mass drug administration in Loa loa-endemic areas**, by Olatunji
+Johnson, Emmanuel Emukah, Lindsay J. Rakers, Jenna Coalson, Charles Nzelu,
+Bertram E. B. Nwoke, Katie Gass and Peter J. Diggle. The manuscript is being
+prepared for submission; no publication DOI is available yet.
 
-The model
-1. maps infection **prevalence** (logistic geostatistical regression),
-2. maps microfilarial **intensity** among positives (lognormal body), the two fields
-   linked by a **bivariate Gaussian process** (intrinsic coregionalisation), and
-3. characterises the **upper tail** of intensity with a peaks-over-threshold
-   **generalised Pareto distribution (GPD)** — necessary because the threshold of
-   concern (20,000 mf/mL) lies beyond the largest observed density.
+The study retrospectively analyses the **2016** LoaScope survey in Abia, Anambra,
+Delta, Ebonyi and Imo. The manuscript analysis uses 10,605 people in 110 villages,
+with 654 positive measurements. The corrected village locations fall in 24
+administrative polygons; predictions cover 78 LGAs. These are historical,
+model-dependent estimates, not a current operational risk map.
 
-For each Local Government Area (LGA) it reports `P(q_g < 0.1%)`, the posterior
-probability that fewer than 0.1% of people exceed 20,000 mf/mL, with robustness
-checks across alternative tail models, lower thresholds, and a model-free benchmark.
-It also implements a **spatially-structured tail** extension,
-`σ_u(x) = exp(α + β·f_c(x))`, that lets tail heaviness vary in space.
+The headline analysis combines a bivariate geostatistical model of infection
+prevalence and positive intensity with a separately fitted, pooled generalised
+Pareto tail above 1,000 mf/mL. It estimates `q_g`, the population-weighted fraction
+exceeding 20,000 mf/mL in LGA `g`, and `P(q_g < 0.001)`. The manuscript compares
+this probability with the proposed provisional 99% criterion. A joint spatial-tail
+extension is implemented separately; it is not the headline fit.
 
-## Paper
+## Data access
 
-> [Authors]. *Predicting where few people carry dangerously high Loa loa
-> microfilarial loads: a Bayesian joint geostatistical and extreme-value analysis to
-> support safe ivermectin mass treatment in south-eastern Nigeria.* (in preparation /
-> under review).
-> **DOI: _to be added on publication._**
+**The survey data, covariate files, fitted models and generated results are not
+included.** A fresh clone therefore cannot reproduce the analysis by itself.
+The individual-level records contain potentially identifying location information.
+Their access arrangements remain those described in the manuscript: requests are
+handled by the study custodians under the original consent and ethics terms.
+Public release is being discussed with the survey team; it has not been authorised
+or performed here.
 
-Closely related prior work using geostatistics for loiasis MDA safety assessment:
-Johnson O, Giorgi E, Fronterrè C, et al. *Geostatistical modelling enables efficient
-safety assessment for mass drug administration with ivermectin in Loa loa endemic
-areas...* PLOS Negl Trop Dis. 2022;16(2):e0010189.
-<https://doi.org/10.1371/journal.pntd.0010189>
+The original survey is [Emukah et al. (2018)](https://doi.org/10.4269/ajtmh.18-0163).
+Related earlier modelling is [Johnson et al. (2022)](https://doi.org/10.1371/journal.pntd.0010189).
 
-## Repository layout
+## Required inputs
 
-```
-code/
-  NGA_common.R               Model definitions: Stan hurdle + ICM GP, GPD tail,
-                             kriging, exact per-LGA prediction, helpers (CFG, load_nga)
-  NGA_fix_data.R             Data-relabelling step (two misgeocoded villages)
-  NGA_gee_extract.py         Google Earth Engine extraction of environmental covariates
-  NGA_validation.R           Adequacy gate: convergence, calibration, spatial block CV,
-                             tail (mean-residual-life) diagnostics
-  NGA_run_highrisk.R         Main run: fit, krige, per-LGA q_g, tail-robustness, LOO
-  NGA_report_figures.R       All maps and figures
-  NGA_manuscript_figures_rev.R  Revised manuscript figures: two-panel EDA figure and
-                             the tail-robustness figure in main-text (lognormal vs
-                             lognormal+GPD) and supplementary (all four models) forms
-  NGA_multithreshold.R       Burden / P(q_g<0.1%) at 10k, 15k, 20k mf/mL
-  NGA_multithreshold_report.R  Multi-threshold table + faceted map
-  NGA_binomial_benchmark.R   Model-free per-LGA "rule of three" upper limits
-  NGA_shape_stability.R      GPD threshold-stability scan over u = 500..1500 mf/mL
-  NGA_prior_sensitivity_xi.R Sensitivity of the tail shape xi to its prior
-  NGA_village_cv.R           Random village-fold CV (local interpolation skill),
-                             the counterpart to the harsh spatial block CV
-  NGA_lga_fix_build.R        Rebuild the survey file keyed on the SURVEY's own village
-                             identity (VillID), correcting villages whose records carry
-                             GPS points in two different LGAs
-  NGA_lga_fix_run.R          Headline model fitted twice through identical code, on the
-                             original and the corrected input, with a per-LGA comparison
-  NGA_extract_numbers.R      Pull every number the manuscript quotes from a results dir
-  run_lgafix_full.sh         Driver: full pipeline on the corrected input
-  run_lgafix_validation.sh   Driver: validation + village CV on the corrected input
-  NGA_spatial_tail_prototype.R  Two-stage spatial-GPD prototype (σ_u(x)=exp(α+β f_c))
-  NGA_joint_tail.R           Joint hurdle+spatial-GPD fit (β-free vs β=0) + per-LGA q_g
-  NGA_joint_tail_compare.R   Spatial-tail vs pooled-tail per-LGA comparison
-  run_corrected.sh           Driver: validation gate -> main run
-  run_lite.R                 Fast preview (fewer chains/iters)
-  run_predict_only.R         Prediction-only re-run from a saved fit
-  run_prevalence_cv_metrics.R  Spatial block-CV prevalence metrics (AUC, Moran's I)
+Run commands from the repository root. The corrected manuscript workflow expects:
+
+| File | Purpose and required fields |
+|---|---|
+| `data/NGA_lgafix.csv` | Corrected survey records: `NAME_1`, `NAME_2`, `Vill`, `utmx`, `utmy`, `Loa_count` |
+| `data/covariates/covariates_villages_corrected.csv` | Village keys `NAME_1`, `NAME_2`, `Vill`, plus the nine covariates below |
+| `data/covariates/covariates_grid.csv` | Prediction grid with `NAME_1`, `NAME_2`, `utmx`, `utmy`, `long`, `lat`, plus the nine covariates |
+| `data/NGA_Ward_Boundaries_8721420816419582471/grid3_nga_boundary_vaccwards.shp` | Map boundaries; include matching `.dbf`, `.shx` and `.prj` files. Attributes include `statename` and `lganame` |
+
+Coordinates `utmx` and `utmy` are in **kilometres**, not metres. The covariates are
+`elevation`, `slope`, `lst_day`, `ndvi`, `rain_total`, `rain_seasonality`,
+`treecover`, `water_occurrence` and `population`. Prediction aggregation uses
+population weights. The map scripts dissolve **GRID3 Nigeria ward polygons** into
+LGA and state boundaries; GADM labels in the survey serve a different purpose.
+The exact boundary release and reuse terms should accompany any redistributed
+boundary files; none are bundled here.
+
+`code/NGA_gee_extract.py` documents environmental extraction with Google Earth
+Engine. It requires the study locations, an authenticated account, your own Cloud
+project ID, and Python packages `earthengine-api` and `pandas`. It does not recreate
+restricted survey locations. `data/prediction_NGA_states.csv` is the fallback
+prediction grid for runs without covariates; those runs are not the manuscript analysis.
+
+## Software
+
+Use R >= 4.1 and a working C++ toolchain for `rstan`. Required R packages are:
+
+```r
+install.packages(c("tidyverse", "rstan", "loo", "fields", "pROC",
+                   "scoringRules", "sf", "patchwork", "jsonlite", "rmarkdown"))
 ```
 
-## Data availability
+The spatial package `sf` needs its platform's GDAL/GEOS/PROJ libraries.
+Use `patchwork` >= 1.3.0 with ggplot2 4.x. The optional
+`run_prevalence_cv_metrics.R` also uses `PRROC`. HTML reports use Pandoc;
+PDF reports need a working LaTeX installation. This repository does not yet
+contain a complete frozen software environment, so record `sessionInfo()` for
+each reproduction and allow for Monte Carlo and package-version differences.
 
-**No data are included in this repository.** The analysis uses individual-level
-*Loa loa* survey records (which contain potentially identifying location information)
-and gridded environmental covariates. The survey data are available from the study
-custodians under the consent and ethics terms of the original survey; the
-environmental covariates can be regenerated with `code/NGA_gee_extract.py` (requires
-a Google Earth Engine account and your own Cloud project ID).
+## Reproduce the corrected headline analysis
 
-Scripts expect inputs under `data/` and write to `results/` relative to the
-repository root (see `CFG$paths` in `NGA_common.R`):
-
-```
-data/NGA_cleaned_corrected.csv                  individual-level survey data (not provided)
-data/prediction_NGA_states.csv                  ~2 km prediction grid
-data/covariates/covariates_villages_corrected.csv
-data/covariates/covariates_grid.csv
-```
-
-## Requirements
-
-- **R** (≥ 4.1) with `rstan` (and a working C++ toolchain for Stan), `loo`,
-  `tidyverse`/`dplyr`/`readr`/`purrr`, `fields`, `splines`, `pROC`.
-- **Python** (≥ 3.9) with `earthengine-api` for covariate extraction (optional).
-
-## Running
-
-Run from the repository root (scripts resolve paths relative to it):
+First obtain authorised copies of the inputs and check their presence:
 
 ```bash
-# 1. validation gate, then the main high-risk run
-bash code/run_corrected.sh
-
-# 2. supplementary analyses
-Rscript code/NGA_multithreshold.R && Rscript code/NGA_multithreshold_report.R
-Rscript code/NGA_binomial_benchmark.R
-Rscript code/NGA_report_figures.R
-
-# 3. tail-model adequacy and out-of-sample checks (supplementary material)
-Rscript code/NGA_shape_stability.R          # threshold stability, u = 500..1500
-Rscript code/NGA_prior_sensitivity_xi.R     # prior sensitivity of the shape xi
-Rscript code/NGA_village_cv.R               # random village-fold CV
-
-# 4. spatially-structured extreme-value tail (Peter Diggle's suggestion)
-Rscript code/NGA_spatial_tail_prototype.R   # fast two-stage prototype
-Rscript code/NGA_joint_tail.R               # full joint fit (set JOINT_SMOKE=1 to test)
-Rscript code/NGA_joint_tail_compare.R       # vs the pooled-tail headline
-
-# 5. revised manuscript figures (fast; no refit needed)
-Rscript code/NGA_manuscript_figures_rev.R
+Rscript code/check_inputs.R
 ```
 
-Scripts that produce manuscript figures write to `results/highrisk_20000/figures/`
-(or `.../validation/`). Set `LOA_MS_FIGDIR` to mirror them into a manuscript
-directory as well:
+If starting from the earlier cleaned survey, run `Rscript code/NGA_lga_fix_build.R`
+once to create `data/NGA_lgafix.csv`. This needs the earlier
+`data/NGA_cleaned_corrected.csv`, including `VillID`, the survey `LGA`, `long`,
+`lat` and the fields listed above. It retains participants while correcting the
+coordinate used to represent each village. Review the correction rule before
+applying it to a different survey.
+
+Then run:
 
 ```bash
-LOA_MS_FIGDIR=/path/to/manuscript/figures Rscript code/NGA_manuscript_figures_rev.R
-```
+# Spatial-block and random-village cross-validation; inspect diagnostics.
+bash code/run_lgafix_validation.sh
 
-Full MCMC settings (4 chains × 2,000 iterations, adapt_delta 0.95) are in `CFG` at
-the top of `NGA_common.R`; reduce them (or use `run_lite.R`) for a quick check.
+# Main fits, threshold comparisons, maps and tables.
+bash code/run_lgafix_full.sh
 
-## Input and output overrides
-
-`CFG$paths$data` and `CFG$paths$out_dir` default to
-`data/NGA_cleaned_corrected.csv` and `results/highrisk_20000`, and can be pointed
-elsewhere with the `LOA_DATA` and `LOA_OUT` environment variables. This allows a
-parallel run on a corrected input without disturbing an existing results directory:
-
-```bash
+# Final main/supplementary EDA and robustness figure variants.
 LOA_DATA=data/NGA_lgafix.csv LOA_OUT=results/highrisk_20000_fixed \
-  Rscript code/NGA_run_highrisk.R
+  Rscript code/NGA_manuscript_figures_rev.R
 ```
 
-## Village identity and the LGA correction
+Validation performs repeated MCMC fits and can take several hours. Successful
+execution is not an automatic declaration of model adequacy: inspect convergence,
+calibration and tail diagnostics. The main fit uses four chains, 2,000 iterations
+per chain and 1,000 warm-up iterations; cross-validation uses shorter fits.
+These settings and seed 1234 are in `code/NGA_common.R`.
 
-Villages were originally keyed on the administrative polygon each GPS point falls
-in (`NAME_1`, `NAME_2`, `Vill`). Several villages carry points in two different
-LGAs — four of them tens of km apart, which are data-entry errors — so those
-villages were split in two and the counts (116 villages, 25 LGAs) departed from the
-survey's own labelling (110 communities, 19 LGAs). `NGA_lga_fix_build.R` keys on
-`VillID` and keeps, for each village, the recorded points whose LGA matches the
-survey's own label. `NGA_lga_fix_run.R` fits the headline model on both inputs and
-compares the per-LGA results; the safety conclusion is unchanged.
+**Avoid mixing the two result directories.** Corrected manuscript headline results
+belong in `results/highrisk_20000_fixed/`. The older `results/highrisk_20000/`
+directory and `run_corrected.sh` predate the village identity correction. Individual
+R scripts retain the earlier default path for compatibility, so specify both
+overrides when running them directly:
 
-## Requirements note
+```bash
+export LOA_DATA=data/NGA_lgafix.csv
+export LOA_OUT=results/highrisk_20000_fixed
+Rscript code/NGA_shape_stability.R
+Rscript code/NGA_prior_sensitivity_xi.R
+Rscript code/NGA_village_cv.R
+Rscript code/NGA_binomial_benchmark.R
+```
 
-`build_covariates()` places natural-spline interior knots at quantiles of the
-distinct covariate values, dropping any that coincide with a boundary knot;
-`water_occurrence` is zero at most villages and a naive quantile rule puts several
-interior knots on the left boundary, which `splines::ns()` rejects. Note also that
-patchwork must be ≥ 1.3.0 to work with ggplot2 4.x — earlier versions fail when
-collecting guides across panels.
+## Find the results
+
+Paths below are relative to `$LOA_OUT`:
+
+| Output | Contents |
+|---|---|
+| `q_g_summaries.csv` | Headline per-LGA posterior burdens, intervals and classification probabilities |
+| `q_g_multithreshold.csv` | Results at 10,000, 15,000 and 20,000 mf/mL |
+| `tail_sensitivity.csv` | Burdens under alternative positive-density/tail models |
+| `validation/metrics.json` | Spatial-block CV and convergence summaries |
+| `validation/village_cv_metrics.json` | Random-village CV summaries |
+| `validation/intensity_cv_metrics.csv` | Held-out intensity diagnostics, saved by the updated validation script for future plot regeneration |
+| `validation/C_loo_pit.pdf`, `.eps`, `.png` | Vector and 600-dpi exports of the spatial-block CV PIT plot; legacy filename retained |
+| `figures/` | Maps and summary plots |
+| `fits.rds` | Fitted Stan models and supporting data; keep access-controlled |
+
+Figures can be mirrored into a manuscript directory by setting `LOA_MS_FIGDIR`
+for scripts that support it. `NGA_extract_numbers.R` provides a numerical audit;
+it does not substitute for inspecting the diagnostics.
+
+## Spatial-tail extension and interpretation
+
+`NGA_joint_tail.R` fits pooled and spatial-scale variants jointly with the hurdle
+model. `NGA_joint_tail_compare.R` compares their per-LGA summaries with the
+headline fit in the same `$LOA_OUT`. `NGA_spatial_tail_prototype.R` is an earlier
+two-stage prototype. These are distinct analyses: do not substitute their output
+for the headline model or describe the separately fitted headline as the joint
+extension. The extension's likelihood description and prior documentation remain
+under manuscript review.
+
+The corrected 20,000 mf/mL analysis gives a minimum classification probability of
+0.998 across 78 LGAs. At 10,000 mf/mL the minimum is 0.983, so the same 99%
+criterion is not met everywhere. The prior-sensitivity script examines conditional
+tail survival; it does not by itself establish robustness of every LGA's full
+classification probability. These distinctions matter when interpreting outputs.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+The code is available under the [MIT license](LICENSE). This license does not
+grant access to, or permission to redistribute, third-party survey or boundary data.

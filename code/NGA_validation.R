@@ -8,7 +8,7 @@
 # Sections:
 #   A. Convergence diagnostics (Rhat, ESS, divergences, E-BFMI, treedepth)
 #   B. Prevalence: spatial block CV -> AUC, Brier, log-loss, reliability
-#   C. Intensity: PPC density, LOO-PIT calibration, CRPS, interval coverage
+#   C. Intensity: spatial-block CV PIT, CRPS, interval coverage
 #   D. Tail-specific: GPD mean-residual-life, shape stability, PP of the maximum
 #   E. Residual spatial autocorrelation: Moran's I + empirical variogram
 #   F. Model comparison: LOO / WAIC across tails x {indep vs coregion} x {+/-cov}
@@ -131,9 +131,9 @@ ggplot(rel, aes(pred, obs, size = n)) +
 ggsave(file.path(VAL_DIR, "B_reliability.png"), width = 5, height = 5, dpi = 150)
 
 # -----------------------------------------------------------------------------
-# C. Intensity CV metrics: CRPS, coverage, LOO-PIT
+# C. Intensity CV metrics: CRPS, coverage, spatial-block CV PIT
 # -----------------------------------------------------------------------------
-log_msg("C. Intensity calibration (CRPS, coverage, LOO-PIT)...")
+log_msg("C. Intensity calibration (CRPS, coverage, spatial-block CV PIT)...")
 # Predictive samples for held-out positives under the family
 intensity_metrics <- map_dfr(cv, function(f) {
   pos <- which(f$ind$y_binary == 1)
@@ -156,12 +156,17 @@ metrics$intensity_cv <- tibble(
   cover90   = mean(intensity_metrics$in90)
 )
 print(metrics$intensity_cv)
-ggplot(intensity_metrics, aes(pit)) +
+write_csv(intensity_metrics, file.path(VAL_DIR, "intensity_cv_metrics.csv"))
+pit_plot <- ggplot(intensity_metrics, aes(pit)) +
   geom_histogram(boundary = 0, bins = 10, fill = "grey70", colour = "white") +
   geom_hline(yintercept = nrow(intensity_metrics) / 10, linetype = 2) +
-  labs(title = "Intensity LOO-PIT (uniform = calibrated)", x = "PIT", y = "count") +
-  theme_minimal()
-ggsave(file.path(VAL_DIR, "C_loo_pit.png"), width = 5, height = 4, dpi = 150)
+  labs(x = "PIT", y = "Count") +
+  theme_minimal(base_size = 11)
+# Preserve the legacy filename but export publication-quality raster and vectors.
+ggsave(file.path(VAL_DIR, "C_loo_pit.png"), pit_plot, width = 5, height = 4, dpi = 600)
+ggsave(file.path(VAL_DIR, "C_loo_pit.pdf"), pit_plot, width = 5, height = 4)
+ggsave(file.path(VAL_DIR, "C_loo_pit.eps"), pit_plot, width = 5, height = 4,
+       device = grDevices::cairo_ps)
 
 # -----------------------------------------------------------------------------
 # D. Tail-specific validation (decisive for the 20,000 question)

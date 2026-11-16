@@ -9,7 +9,7 @@
 suppressMessages({ library(dplyr); library(readr); library(tidyr) })
 ROOT <- Sys.getenv("LOA_ROOT", unset = getwd())  # run from the repository root, or set LOA_ROOT
 setwd(ROOT)
-OUTD <- "results/highrisk_20000"
+OUTD <- Sys.getenv("LOA_OUT", "results/highrisk_20000")
 OUT  <- file.path(OUTD, "spatial_tail")
 
 prev  <- read_csv(file.path(OUTD, "q_g_summaries.csv"), show_col_types = FALSE) |>
