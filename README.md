@@ -108,11 +108,7 @@ calibration and tail diagnostics. The main fit uses four chains, 2,000 iteration
 per chain and 1,000 warm-up iterations; cross-validation uses shorter fits.
 These settings and seed 1234 are in `code/NGA_common.R`.
 
-**Avoid mixing the two result directories.** Corrected manuscript headline results
-belong in `results/highrisk_20000_fixed/`. The older `results/highrisk_20000/`
-directory and `run_corrected.sh` predate the village identity correction. Individual
-R scripts retain the earlier default path for compatibility, so specify both
-overrides when running them directly:
+To run individual analysis scripts, set the input and output paths:
 
 ```bash
 export LOA_DATA=data/NGA_lgafix.csv
